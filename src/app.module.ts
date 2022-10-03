@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import slackConfig from './config/slack.config';
 import { validationSchema } from './config/validationSchema';
+import { SlackModule } from './slack/slack.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { validationSchema } from './config/validationSchema';
       isGlobal: true,
       validationSchema,
     }),
+    SlackModule,
   ],
   controllers: [AppController],
   providers: [AppService],
