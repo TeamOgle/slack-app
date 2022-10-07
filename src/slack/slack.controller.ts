@@ -1,4 +1,4 @@
-import { Controller, HttpStatus, Post, Req, Res } from '@nestjs/common';
+import { Controller, Post, Req, Res } from '@nestjs/common';
 import { SlackService } from './slack.service';
 
 @Controller('slack')
@@ -10,8 +10,8 @@ export class SlackController {
     try {
       let interactionResult = true;
 
-      const payload = await JSON.parse(request.body.payload)
-      const { type, trigger_id } = payload
+      const payload = await JSON.parse(request.body.payload);
+      const { type, trigger_id } = payload;
 
       const interaction = {
         type,

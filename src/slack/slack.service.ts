@@ -1,15 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { WebClient } from '@slack/web-api';
-import { map } from 'rxjs';
 import slackConfig from 'src/config/slack.config';
-import { isNumberObject } from 'util/types';
 
 @Injectable()
 export class SlackService {
   private slack: WebClient;
-  private readonly selectChannelActionId = 'selected_conversation'
-  private readonly selectUsersActionId = 'selected_users'
+  private readonly SELECTED_CHANNEL_ACTION_ID = 'selected_conversation';
+  private readonly SELECTED_USERS_ACTION_ID = 'selected_users';
 
   constructor(@Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>) {
     this.slack = new WebClient(config.token);
@@ -67,7 +65,7 @@ export class SlackService {
                 filter: {
                   include: ['private'],
                 },
-                action_id: this.selectChannelActionId,
+                action_id: this.SELECTED_CHANNEL_ACTION_ID,
               },
             ],
           },
@@ -80,7 +78,7 @@ export class SlackService {
                 text: 'Select companions',
                 emoji: true,
               },
-              action_id: this.selectUsersActionId,
+              action_id: this.SELECTED_USERS_ACTION_ID,
             },
             label: {
               type: 'plain_text',
@@ -132,15 +130,15 @@ export class SlackService {
       values.set(key, value);
     }
 
-    const { user } = payload
-    const channel = values.get(this.selectChannelActionId)[this.selectChannelActionId]
-    const receiveUsers = values.get(this.selectUsersActionId)[this.selectUsersActionId]
-    const link = values.get('link').value
-    const content = values.get('contents').value
+    const { user } = payload;
+    const channel = values.get(this.SELECTED_CHANNEL_ACTION_ID)[this.SELECTED_CHANNEL_ACTION_ID];
+    const receiveUsers = values.get(this.SELECTED_USERS_ACTION_ID)[this.SELECTED_USERS_ACTION_ID];
+    const link = values.get('link').value;
+    const content = values.get('contents').value;
 
-    const data = {user, channel, receiveUsers, link, content};
-    console.log('data',data)
+    const data = { user, channel, receiveUsers, link, content };
+    console.log('data', data);
 
-    return data ? true: false
+    return data ? true : false;
   }
 }
