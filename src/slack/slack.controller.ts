@@ -1,10 +1,11 @@
-import { Controller, Post, Req, Res } from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
 import { SlackService } from './slack.service';
 
 @Controller('slack')
 export class SlackController {
   constructor(private readonly slackService: SlackService) {}
 
+  @HttpCode(HttpStatus.OK)
   @Post('events')
   async callModal(@Req() request, @Res() response) {
     try {
@@ -27,7 +28,7 @@ export class SlackController {
 
       if (interactionResult) {
         // 매 요청마다 HTTP status 200을 전달해야 하며 response에 아무것도 담겨있으면 안 됨
-        return response.status(200).json();
+        return response.json();
       } else {
         throw new Error('app error');
       }
