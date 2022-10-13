@@ -35,6 +35,11 @@ export class SlackTeamEntity {
   @Column({ type: 'varchar', unique: false, nullable: false })
   name: string;
 
+  @IsNotEmpty()
+  @IsString()
+  @Column({ type: 'varchar', unique: false, nullable: false })
+  accessToken: string;
+
   @IsString()
   @Column({ type: 'varchar', unique: true, nullable: true })
   enterpriseId: string;

@@ -1,5 +1,6 @@
-import { Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { SlackService } from './slack.service';
+import type { SlackShortCutDto } from './dtos/slack-short-cut.dto';
 
 @Controller('slack')
 export class SlackController {
@@ -7,33 +8,32 @@ export class SlackController {
 
   @HttpCode(HttpStatus.OK)
   @Post('events')
-  async callModal(@Req() request, @Res() response) {
-    try {
-      let interactionResult = true;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async callModal(@Body() slackShortCutDto: SlackShortCutDto, @Res({ passthrough: true }) res) {
+    let interactionResult = true;
+    const payload = slackShortCutDto.payload;
 
-      const payload = await JSON.parse(request.body.payload);
-      const { type, trigger_id } = payload;
-
-      const interaction = {
-        type,
-        access: 'success',
-      };
-      console.log(interaction);
-
-      if (type === 'shortcut') {
-        interactionResult = await this.slackService.callModal(trigger_id);
-      } else if (type === 'view_submission') {
-        interactionResult = await this.slackService.getModalValues(payload);
-      }
-
-      if (interactionResult) {
-        // 매 요청마다 HTTP status 200을 전달해야 하며 response에 아무것도 담겨있으면 안 됨
-        return response.json();
-      } else {
-        throw new Error('app error');
-      }
-    } catch (err) {
-      console.log('err', err);
+    if (payload.type === 'shortcut') {
+      interactionResult = await this.slackService.callModal(payload.trigger_id);
+    } else if (payload.type === 'view_submission') {
+      interactionResult = await this.slackService.getModalValues(payload);
     }
+
+    if (!interactionResult) {
+      throw new Error('slack app error');
+    }
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('action-point')
+  subscribeEvent(@Body() body) {
+    return { challenge: body.challenge };
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('auth')
+  auth(@Query('code') code) {
+    this.slackService.accessWorkspace(code);
+    return 'hello';
   }
 }

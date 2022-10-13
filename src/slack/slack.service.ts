@@ -3,6 +3,7 @@ import type { ConfigType } from '@nestjs/config';
 import type { ModalView, Block, KnownBlock, MessageAttachment } from '@slack/web-api';
 import { WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
+import type { InteractionPayload } from './dtos/slack-short-cut.dto';
 
 @Injectable()
 export class SlackService {
@@ -122,10 +123,20 @@ export class SlackService {
   };
 
   constructor(@Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>) {
-    this.slack = new WebClient(config.botToken);
+    this.slack = new WebClient();
   }
 
-  async callModal(trigger_id) {
+  async accessWorkspace(code: string) {
+    const result = await this.slack.oauth.v2.access({
+      code,
+      client_id: this.config.clientId,
+      client_secret: this.config.clientSecret,
+    });
+    const userList = await this.slack.users.list({ token: result.access_token });
+    console.log(userList);
+  }
+
+  async callModal(trigger_id: string) {
     const result = await this.slack.views.open({
       trigger_id,
       view: this.modalView,
@@ -134,7 +145,7 @@ export class SlackService {
     return result ? true : false;
   }
 
-  async getModalValues(payload) {
+  async getModalValues(payload: InteractionPayload) {
     const blocks = Object.values(payload.view.state.values);
 
     const values = new Map();
