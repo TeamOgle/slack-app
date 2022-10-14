@@ -16,10 +16,23 @@ import {
   USER_ACTION_ID,
 } from './utils';
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
+import { TagEntity } from '../database/entities/tags.entity';
 
 @Injectable()
 export class SlackService {
   private slack: WebClient;
+  private defaultTags = [
+    '트렌드',
+    '서비스',
+    '비즈니스',
+    '기획',
+    '디자인',
+    '데이터',
+    '개발',
+    '마케팅',
+    '커리어',
+    '브랜드',
+  ];
 
   constructor(
     @Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>,
@@ -28,6 +41,7 @@ export class SlackService {
     @InjectRepository(SlackUserEntity) private slackUserRepository: Repository<SlackUserEntity>,
     @InjectRepository(TeamEntity) private teamRepository: Repository<TeamEntity>,
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+    @InjectRepository(TagEntity) private tagRepository: Repository<TagEntity>,
   ) {
     this.slack = new WebClient();
   }
@@ -66,9 +80,17 @@ export class SlackService {
     });
     const slackTeam = await this.slackTeamRepository.save(slackTeamEntity);
 
+    const tags = this.defaultTags.map((tag) => {
+      const tagEntity = this.tagRepository.create({
+        id: ulid(),
+        name: tag,
+      });
+      return tagEntity;
+    });
     const teamEntity = this.teamRepository.create({
       id: ulid(),
       slackTeam,
+      tags,
     });
     const team = await this.teamRepository.save(teamEntity);
 
@@ -109,10 +131,19 @@ export class SlackService {
     await Promise.all(userEntities.map((user) => this.userRepository.save(user)));
   }
 
-  async callModal(trigger_id: string) {
+  async callModal(slackTeamId: string, trigger_id: string) {
+    const team = await this.teamRepository.findOne({
+      relations: { slackTeam: true, tags: true },
+      where: {
+        slackTeam: {
+          id: slackTeamId,
+        },
+      },
+    });
     const result = await this.slack.views.open({
+      token: team.slackTeam.accessToken,
       trigger_id,
-      view: slackModalView([]),
+      view: slackModalView(team.tags),
     });
 
     return result ? true : false;

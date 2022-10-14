@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req } from '@nestjs/common';
 import { SlackService } from './slack.service';
 import type { SlackShortCutDto } from './dtos/slack-short-cut.dto';
 
@@ -8,12 +8,13 @@ export class SlackController {
 
   @HttpCode(HttpStatus.OK)
   @Post('events')
-  async callModal(@Body() slackShortCutDto: SlackShortCutDto) {
+  async callModal(@Req() req) {
     let interactionResult = true;
+    const slackShortCutDto: SlackShortCutDto = { payload: JSON.parse(req.body.payload) };
     const payload = slackShortCutDto.payload;
 
     if (payload.type === 'shortcut') {
-      interactionResult = await this.slackService.callModal(payload.trigger_id);
+      interactionResult = await this.slackService.callModal(payload.team.id, payload.trigger_id);
     } else if (payload.type === 'view_submission') {
       interactionResult = await this.slackService.getModalValues(payload);
     }

@@ -49,7 +49,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             text: 'Select companions',
             emoji: true,
           },
-          action_id: this.USER_ACTION_ID,
+          action_id: USER_ACTION_ID,
         },
         label: {
           type: 'plain_text',
@@ -67,7 +67,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             emoji: true,
           },
           options: tagOptions,
-          action_id: this.TAG_ACTION_ID,
+          action_id: TAG_ACTION_ID,
         },
         label: {
           type: 'plain_text',
@@ -82,7 +82,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         type: 'input',
         element: {
           type: 'plain_text_input',
-          action_id: this.LINK_ACTION_ID,
+          action_id: LINK_ACTION_ID,
         },
         label: {
           type: 'plain_text',
@@ -95,7 +95,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         element: {
           type: 'plain_text_input',
           multiline: true,
-          action_id: this.CONTENT_ACTION_ID,
+          action_id: CONTENT_ACTION_ID,
         },
         label: {
           type: 'plain_text',

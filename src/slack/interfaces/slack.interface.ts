@@ -2,6 +2,7 @@
 export interface ShortCutPayload {
   type: 'shortcut' | 'message_action';
   trigger_id: string;
+  team: { id: string };
 }
 
 export interface InteractionView {

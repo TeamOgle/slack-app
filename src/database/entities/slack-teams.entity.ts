@@ -48,6 +48,8 @@ export class SlackTeamEntity {
   @Column({ type: 'varchar', unique: false, nullable: true })
   enterpriseName: string;
 
-  @OneToMany(() => SlackUserEntity, (slackUser: SlackUserEntity) => slackUser.slackTeam)
+  @OneToMany(() => SlackUserEntity, (slackUser: SlackUserEntity) => slackUser.slackTeam, {
+    cascade: true,
+  })
   slackUsers: SlackUserEntity[];
 }
