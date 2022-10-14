@@ -8,7 +8,7 @@ import { TagEntity } from './tags.entity';
 export class LinkEntity extends CommonEntity {
   @IsNotEmpty()
   @IsUrl()
-  @Column({ type: 'varchar', unique: false, nullable: false })
+  @Column({ type: 'varchar', length: 500, unique: false, nullable: false })
   url: string;
 
   @ManyToOne(() => UserEntity, (sharingUser: UserEntity) => sharingUser.sharingLinks)
@@ -21,10 +21,12 @@ export class LinkEntity extends CommonEntity {
   ])
   sharingUser: UserEntity;
 
-  @ManyToMany(() => UserEntity, (sharedUser: UserEntity) => sharedUser.sharedLinks)
+  @ManyToMany(() => UserEntity, (sharedUser: UserEntity) => sharedUser.sharedLinks, {
+    cascade: ['insert', 'update'],
+  })
   sharedUsers: UserEntity[];
 
-  @ManyToMany(() => TagEntity, (tag: TagEntity) => tag.links)
+  @ManyToMany(() => TagEntity, (tag: TagEntity) => tag.links, { cascade: ['insert', 'update'] })
   @JoinTable({
     // table
     name: 'link_tags',

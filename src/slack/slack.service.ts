@@ -2,7 +2,13 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { type UsersListResponse, WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
-import { SlackUserEntity, SlackTeamEntity, TeamEntity, UserEntity } from 'src/database/entities';
+import {
+  SlackUserEntity,
+  SlackTeamEntity,
+  TeamEntity,
+  UserEntity,
+  LinkEntity,
+} from 'src/database/entities';
 import type { InteractionPayload } from './interfaces';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -42,6 +48,7 @@ export class SlackService {
     @InjectRepository(TeamEntity) private teamRepository: Repository<TeamEntity>,
     @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
     @InjectRepository(TagEntity) private tagRepository: Repository<TagEntity>,
+    @InjectRepository(LinkEntity) private linkRepository: Repository<LinkEntity>,
   ) {
     this.slack = new WebClient();
   }
@@ -149,7 +156,47 @@ export class SlackService {
     return result ? true : false;
   }
 
-  async getModalValues(payload: InteractionPayload) {
+  async sendLink(payload: InteractionPayload) {
+    const { receiveUsers, tagIds, url } = await this.postSlackMessage(payload);
+
+    const sharingUser = await this.userRepository.findOne({
+      relations: { slackUser: true },
+      where: {
+        slackUser: {
+          id: payload.user.id,
+        },
+      },
+    });
+    const sharedUsers = await Promise.all(
+      receiveUsers.map((userId) =>
+        this.userRepository.findOne({
+          relations: { slackUser: true },
+          where: {
+            slackUser: {
+              id: userId,
+            },
+          },
+        }),
+      ),
+    );
+    const tags = await Promise.all(
+      tagIds.map((tagId) => this.tagRepository.findOneBy({ id: tagId })),
+    );
+
+    const linkEntity = this.linkRepository.create({
+      id: ulid(),
+      url,
+      sharingUser,
+      sharedUsers,
+      tags,
+    });
+    const link = this.linkRepository.save(linkEntity);
+
+    return link ? true : false;
+  }
+
+  async postSlackMessage(payload: InteractionPayload) {
+    const slackTeam = await this.slackTeamRepository.findOneBy({ id: payload.team.id });
     const blocks = Object.values(payload.view.state.values);
 
     const values = new Map();
@@ -160,14 +207,14 @@ export class SlackService {
 
     const { user } = payload;
     const receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
-    const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID].map((tag) => `#${tag.text.text}`);
+    const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID];
     const link = values.get(LINK_ACTION_ID).value;
     const content = values.get(CONTENT_ACTION_ID).value;
 
-    const data = { user, receiveUsers, tags, link, content };
     const receiverMentions = receiveUsers.map((user) => `<@${user}>`).join(' ');
 
     const conversations = await this.slack.conversations.list({
+      token: slackTeam.accessToken,
       types: 'public_channel,private_channel',
     });
     const channels = conversations.channels.filter((channel) => channel.is_member);
@@ -179,18 +226,19 @@ export class SlackService {
     const { messageBlocks, messageAttachments } = slackMessageBlock(
       receiverMentions,
       user.id,
-      tags.join(' '),
+      tags.map((tag) => `#${tag.text.text}`).join(' '),
       content,
       link,
     );
 
     await this.slack.chat.postMessage({
+      token: slackTeam.accessToken,
       channel: channels[0].id,
-      text: 'test',
+      text: content,
       blocks: messageBlocks,
       attachments: messageAttachments,
     });
 
-    return data ? true : false;
+    return { receiveUsers, tagIds: tags.map((tag) => tag.value), url: link };
   }
 }

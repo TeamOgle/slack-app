@@ -14,7 +14,7 @@ export interface InteractionView {
 // https://api.slack.com/reference/interaction-payloads/views#view_submission
 export interface InteractionPayload {
   type: 'view_submission';
-  team: any;
-  user: any;
+  team: { id: string };
+  user: { id: string };
   view: InteractionView;
 }

@@ -119,7 +119,7 @@ export function slackMessageBlock(
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `*${receiverMentions}님! 이거 같이 볼까요?*`,
+        text: `*${receiverMentions}님! 이거 같이 볼까요? 👀*`,
       },
     },
     {
@@ -144,14 +144,20 @@ export function slackMessageBlock(
             text: `${tags}`,
           },
         },
+      ],
+      color: '#355FE9',
+    },
+    {
+      blocks: [
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${content} \n<${link}|읽어보기>`,
+            text: `${content} \n\n*<${link}|👉 지금 읽어보기>*`,
           },
         },
       ],
+      color: '#01319F',
     },
   ];
   return { messageBlocks, messageAttachments };
