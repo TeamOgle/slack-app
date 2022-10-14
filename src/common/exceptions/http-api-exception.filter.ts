@@ -9,14 +9,14 @@ export class HttpApiExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
-    const error = exception.getResponse() as
+    const errorResponse = exception.getResponse() as
       | string
       | { error: string; statusCode: number; message: string[] };
-    this.logger.error(error);
-    if (typeof error === 'string') {
-      response.status(status).json({ success: true, statusCode: status, message: error });
+    this.logger.error(errorResponse);
+    if (typeof errorResponse === 'string') {
+      response.status(status).json({ statusCode: status, message: errorResponse });
     } else {
-      response.status(status).json({ success: false, ...error });
+      response.status(status).json(errorResponse);
     }
   }
 }

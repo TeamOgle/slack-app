@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { SlackService } from './slack.service';
 import type { SlackShortCutDto } from './dtos/slack-short-cut.dto';
 
@@ -8,8 +8,7 @@ export class SlackController {
 
   @HttpCode(HttpStatus.OK)
   @Post('events')
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async callModal(@Body() slackShortCutDto: SlackShortCutDto, @Res({ passthrough: true }) res) {
+  async callModal(@Body() slackShortCutDto: SlackShortCutDto) {
     let interactionResult = true;
     const payload = slackShortCutDto.payload;
 
@@ -33,7 +32,6 @@ export class SlackController {
   @HttpCode(HttpStatus.OK)
   @Get('auth')
   auth(@Query('code') code) {
-    this.slackService.accessWorkspace(code);
-    return 'hello';
+    return this.slackService.accessWorkspace(code);
   }
 }

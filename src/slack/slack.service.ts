@@ -1,145 +1,110 @@
 import { HttpException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import type { ModalView, Block, KnownBlock, MessageAttachment } from '@slack/web-api';
-import { WebClient } from '@slack/web-api';
+import { type UsersListResponse, WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
-import type { InteractionPayload } from './dtos/slack-short-cut.dto';
+import { SlackUserEntity, SlackTeamEntity, TeamEntity, UserEntity } from 'src/database/entities';
+import type { InteractionPayload } from './interfaces';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ulid } from 'ulid';
+import {
+  CONTENT_ACTION_ID,
+  LINK_ACTION_ID,
+  slackMessageBlock,
+  slackModalView,
+  TAG_ACTION_ID,
+  USER_ACTION_ID,
+} from './utils';
+import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 
 @Injectable()
 export class SlackService {
   private slack: WebClient;
-  private readonly USER_ACTION_ID = 'selected_users';
-  private readonly TAG_ACTION_ID = 'selected_options';
-  private readonly LINK_ACTION_ID = 'link';
-  private readonly CONTENT_ACTION_ID = 'contents';
 
-  private modalView: ModalView = {
-    type: 'modal',
-    title: {
-      type: 'plain_text',
-      text: 'Zettel',
-      emoji: true,
-    },
-    submit: {
-      type: 'plain_text',
-      text: '제출',
-      emoji: true,
-    },
-    close: {
-      type: 'plain_text',
-      text: '닫기',
-    },
-    callback_id: 'call_modal',
-    blocks: [
-      {
-        type: 'input',
-        element: {
-          type: 'multi_users_select',
-          placeholder: {
-            type: 'plain_text',
-            text: 'Select companions',
-            emoji: true,
-          },
-          action_id: this.USER_ACTION_ID,
-        },
-        label: {
-          type: 'plain_text',
-          text: '동료',
-          emoji: true,
-        },
-      },
-      {
-        type: 'input',
-        element: {
-          type: 'multi_static_select',
-          placeholder: {
-            type: 'plain_text',
-            text: 'Select options',
-            emoji: true,
-          },
-          options: [
-            {
-              text: {
-                type: 'plain_text',
-                text: '태그1',
-                emoji: true,
-              },
-              value: 'value-0',
-            },
-            {
-              text: {
-                type: 'plain_text',
-                text: '태그2',
-                emoji: true,
-              },
-              value: 'value-1',
-            },
-            {
-              text: {
-                type: 'plain_text',
-                text: '태그3',
-                emoji: true,
-              },
-              value: 'value-2',
-            },
-          ],
-          action_id: this.TAG_ACTION_ID,
-        },
-        label: {
-          type: 'plain_text',
-          text: 'Label',
-          emoji: true,
-        },
-      },
-      {
-        type: 'divider',
-      },
-      {
-        type: 'input',
-        element: {
-          type: 'plain_text_input',
-          action_id: this.LINK_ACTION_ID,
-        },
-        label: {
-          type: 'plain_text',
-          text: '링크',
-          emoji: true,
-        },
-      },
-      {
-        type: 'input',
-        element: {
-          type: 'plain_text_input',
-          multiline: true,
-          action_id: this.CONTENT_ACTION_ID,
-        },
-        label: {
-          type: 'plain_text',
-          text: '내용',
-          emoji: true,
-        },
-      },
-    ],
-  };
-
-  constructor(@Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>) {
+  constructor(
+    @Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>,
+    // @Inject() private slackViewService: SlackViewService,
+    @InjectRepository(SlackTeamEntity) private slackTeamRepository: Repository<SlackTeamEntity>,
+    @InjectRepository(SlackUserEntity) private slackUserRepository: Repository<SlackUserEntity>,
+    @InjectRepository(TeamEntity) private teamRepository: Repository<TeamEntity>,
+    @InjectRepository(UserEntity) private userRepository: Repository<UserEntity>,
+  ) {
     this.slack = new WebClient();
   }
 
-  async accessWorkspace(code: string) {
+  async accessWorkspace(code: string): Promise<void> {
     const result = await this.slack.oauth.v2.access({
       code,
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
     });
-    const userList = await this.slack.users.list({ token: result.access_token });
-    console.log(userList);
+    const userData = await this.slack.users.list({ token: result.access_token });
+
+    const { id, name } = result.team;
+    const enterpriseData = result.enterprise;
+
+    const { slackTeam, team } = await this.saveTeam(id, name, result.access_token, enterpriseData);
+    await this.saveUsers(userData, slackTeam, team);
+  }
+
+  private async saveTeam(
+    id: string,
+    name: string,
+    accessToken: string,
+    enterpriseData: Enterprise,
+  ): Promise<{ slackTeam: SlackTeamEntity; team: TeamEntity }> {
+    const slackTeamEntity = this.slackTeamRepository.create({
+      id,
+      name,
+      accessToken,
+      enterpriseId: enterpriseData.id,
+      enterpriseName: enterpriseData.name,
+    });
+    const slackTeam = await this.slackTeamRepository.save(slackTeamEntity);
+
+    const teamEntity = this.teamRepository.create({
+      id: ulid(),
+      slackTeam,
+    });
+    const team = await this.teamRepository.save(teamEntity);
+
+    return { slackTeam, team };
+  }
+
+  private async saveUsers(
+    userData: UsersListResponse,
+    slackTeam: SlackTeamEntity,
+    team: TeamEntity,
+  ) {
+    const slackUserEntities = userData.members.map((member) => {
+      const { id, name, real_name } = member;
+      const slackUser = this.slackUserRepository.create({
+        id,
+        name,
+        realName: real_name,
+        slackTeam,
+      });
+      return slackUser;
+    });
+    const slackUsers = await Promise.all(
+      slackUserEntities.map((slackUser) => this.slackUserRepository.save(slackUser)),
+    );
+
+    const userEntities = slackUsers.map((slackUser) => {
+      const user = this.userRepository.create({
+        id: ulid(),
+        team,
+        slackUser,
+      });
+      return user;
+    });
+    await Promise.all(userEntities.map((user) => this.userRepository.save(user)));
   }
 
   async callModal(trigger_id: string) {
     const result = await this.slack.views.open({
       trigger_id,
-      view: this.modalView,
+      view: slackModalView([]),
     });
 
     return result ? true : false;
@@ -155,12 +120,10 @@ export class SlackService {
     }
 
     const { user } = payload;
-    const receiveUsers = values.get(this.USER_ACTION_ID)[this.USER_ACTION_ID];
-    const tags = values
-      .get(this.TAG_ACTION_ID)
-      [this.TAG_ACTION_ID].map((tag) => `#${tag.text.text}`);
-    const link = values.get(this.LINK_ACTION_ID).value;
-    const content = values.get(this.CONTENT_ACTION_ID).value;
+    const receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
+    const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID].map((tag) => `#${tag.text.text}`);
+    const link = values.get(LINK_ACTION_ID).value;
+    const content = values.get(CONTENT_ACTION_ID).value;
 
     const data = { user, receiveUsers, tags, link, content };
     const receiverMentions = receiveUsers.map((user) => `<@${user}>`).join(' ');
@@ -174,46 +137,13 @@ export class SlackService {
       throw new HttpException('no channels', 400);
     }
 
-    const messageBlocks: (Block | KnownBlock)[] = [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `*${receiverMentions}님! 이거 같이 볼까요?*`,
-        },
-      },
-      {
-        type: 'divider',
-      },
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `<@${user.id}>님이 공유했어요`,
-        },
-      },
-    ];
-
-    const messageAttachments: MessageAttachment[] = [
-      {
-        blocks: [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `${tags.join(' ')}`,
-            },
-          },
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `${content} \n<${link}|읽어보기>`,
-            },
-          },
-        ],
-      },
-    ];
+    const { messageBlocks, messageAttachments } = slackMessageBlock(
+      receiverMentions,
+      user.id,
+      tags.join(' '),
+      content,
+      link,
+    );
 
     await this.slack.chat.postMessage({
       channel: channels[0].id,

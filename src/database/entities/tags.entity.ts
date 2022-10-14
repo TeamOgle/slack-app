@@ -1,10 +1,11 @@
 import { IsNotEmpty, IsUrl } from 'class-validator';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 import { CommonEntity } from './common.entity';
 import { LinkEntity } from './links.entity';
 import { TeamEntity } from './teams.entity';
 
 @Entity('tags')
+@Index(['name', 'team'], { unique: true })
 export class TagEntity extends CommonEntity {
   @IsNotEmpty()
   @IsUrl()
