@@ -147,13 +147,11 @@ export class SlackService {
         },
       },
     });
-    const result = await this.slack.views.open({
+    await this.slack.views.open({
       token: team.slackTeam.accessToken,
       trigger_id,
       view: slackModalView(team.tags),
     });
-
-    return result ? true : false;
   }
 
   async sendLink(payload: InteractionPayload) {
@@ -190,9 +188,7 @@ export class SlackService {
       sharedUsers,
       tags,
     });
-    const link = this.linkRepository.save(linkEntity);
-
-    return link ? true : false;
+    await this.linkRepository.save(linkEntity);
   }
 
   async postSlackMessage(payload: InteractionPayload) {

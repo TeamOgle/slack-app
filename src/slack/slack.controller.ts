@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } from '@nestjs/common';
 import { SlackService } from './slack.service';
-import type { SlackShortCutDto } from './dtos/slack-short-cut.dto';
+import type { SlackShortCutDto, SlackEventDto } from './dtos';
+import type { ShortCutPayload, InteractionPayload } from './interfaces';
 
 @Controller('slack')
 export class SlackController {
@@ -9,18 +10,13 @@ export class SlackController {
   @HttpCode(HttpStatus.OK)
   @Post('events')
   async callModal(@Req() req, @Res() res): Promise<void> {
-    let interactionResult = true;
-    const slackShortCutDto: SlackShortCutDto = { payload: JSON.parse(req.body.payload) };
-    const payload = slackShortCutDto.payload;
+    const slackShortCutDto: SlackShortCutDto = req.body;
+    const payload: ShortCutPayload | InteractionPayload = JSON.parse(slackShortCutDto.payload);
 
     if (payload.type === 'shortcut') {
-      interactionResult = await this.slackService.callModal(payload.team.id, payload.trigger_id);
+      await this.slackService.callModal(payload.team.id, payload.trigger_id);
     } else if (payload.type === 'view_submission') {
-      interactionResult = await this.slackService.sendLink(payload);
-    }
-
-    if (!interactionResult) {
-      throw new Error('slack app error');
+      await this.slackService.sendLink(payload);
     }
 
     return res.json();
@@ -28,7 +24,8 @@ export class SlackController {
 
   @HttpCode(HttpStatus.OK)
   @Post('action-point')
-  subscribeEvent(@Body() body) {
+  subscribeEvent(@Body() body: SlackEventDto) {
+    console.log(body);
     return { challenge: body.challenge };
   }
 
