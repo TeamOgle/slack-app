@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { type UsersListResponse, WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
@@ -39,7 +39,6 @@ export class SlackService {
       client_secret: this.config.clientSecret,
     });
     const userData = await this.slack.users.list({ token: result.access_token });
-
     const { id, name } = result.team;
     const enterpriseData = result.enterprise;
 
@@ -51,14 +50,19 @@ export class SlackService {
     id: string,
     name: string,
     accessToken: string,
-    enterpriseData: Enterprise,
+    enterpriseData?: Enterprise,
   ): Promise<{ slackTeam: SlackTeamEntity; team: TeamEntity }> {
+    const exSlackTeam = await this.slackTeamRepository.findOneBy({ id });
+    if (exSlackTeam) {
+      throw new BadRequestException('exist team');
+    }
+
     const slackTeamEntity = this.slackTeamRepository.create({
       id,
       name,
       accessToken,
-      enterpriseId: enterpriseData.id,
-      enterpriseName: enterpriseData.name,
+      enterpriseId: enterpriseData?.id,
+      enterpriseName: enterpriseData?.name,
     });
     const slackTeam = await this.slackTeamRepository.save(slackTeamEntity);
 
@@ -76,10 +80,14 @@ export class SlackService {
     slackTeam: SlackTeamEntity,
     team: TeamEntity,
   ) {
-    const slackUserEntities = userData.members.map((member) => {
-      const { id, name, real_name } = member;
+    const validMembers = userData.members.filter(
+      (member) => !member.is_bot && !member.deleted && member.is_email_confirmed,
+    );
+    const slackUserEntities = validMembers.map((member) => {
+      const { id, name, real_name, profile } = member;
       const slackUser = this.slackUserRepository.create({
         id,
+        email: profile.email,
         name,
         realName: real_name,
         slackTeam,
@@ -134,7 +142,7 @@ export class SlackService {
     const channels = conversations.channels.filter((channel) => channel.is_member);
 
     if (!channels.length) {
-      throw new HttpException('no channels', 400);
+      throw new BadRequestException('no channels');
     }
 
     const { messageBlocks, messageAttachments } = slackMessageBlock(
