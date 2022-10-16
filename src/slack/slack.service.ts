@@ -67,7 +67,7 @@ export class SlackService {
     const { slackTeam, team } = await this.saveTeam(id, name, result.access_token, enterpriseData);
     await this.saveUsers(userData, slackTeam, team);
 
-    return { url: `slack://open?team=${slackTeam.id}` };
+    return `<script type="text/javascript">location.href = "slack://open?team=${slackTeam.id}";</script>`;
   }
 
   private async saveTeam(
