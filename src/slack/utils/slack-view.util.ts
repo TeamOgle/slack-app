@@ -53,6 +53,11 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           },
           action_id: USER_ACTION_ID,
         },
+        label: {
+          type: 'plain_text',
+          text: ' ',
+          emoji: true,
+        },
       },
       {
         type: 'input',
@@ -66,6 +71,11 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           options: tagOptions,
           action_id: TAG_ACTION_ID,
         },
+        label: {
+          type: 'plain_text',
+          text: ' ',
+          emoji: true,
+        },
       },
       {
         type: 'input',
@@ -78,6 +88,11 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             emoji: true,
           },
         },
+        label: {
+          type: 'plain_text',
+          text: ' ',
+          emoji: true,
+        },
       },
       {
         type: 'input',
@@ -87,7 +102,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           action_id: CONTENT_ACTION_ID,
           placeholder: {
             type: 'plain_text',
-            text: '공유하고 싶은 이유를 알려주면 함께 볼 사람들의 관심도가 올라가요',
+            text: '공유하는 이유를 알려주면 함께 볼 사람들의 관심도가 올라가요',
             emoji: true,
           },
         },
