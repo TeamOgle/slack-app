@@ -48,15 +48,10 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_users_select',
           placeholder: {
             type: 'plain_text',
-            text: '함께 볼 사람 선택',
+            text: '누구와 정보를 공유 할까요?',
             emoji: true,
           },
           action_id: USER_ACTION_ID,
-        },
-        label: {
-          type: 'plain_text',
-          text: '누구와 정보를 공유 할까요?',
-          emoji: true,
         },
       },
       {
@@ -65,20 +60,12 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_static_select',
           placeholder: {
             type: 'plain_text',
-            text: '태그 선택',
+            text: '태그를 선택해 정보를 분류해 보세요',
             emoji: true,
           },
           options: tagOptions,
           action_id: TAG_ACTION_ID,
         },
-        label: {
-          type: 'plain_text',
-          text: '태그로 정보를 분류해요',
-          emoji: true,
-        },
-      },
-      {
-        type: 'divider',
       },
       {
         type: 'input',
@@ -87,14 +74,9 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           action_id: LINK_ACTION_ID,
           placeholder: {
             type: 'plain_text',
-            text: '링크 붙여넣기',
+            text: '공유할 링크 주소를 입력해 주세요',
             emoji: true,
           },
-        },
-        label: {
-          type: 'plain_text',
-          text: '공유할 링크 주소를 입력해 주세요',
-          emoji: true,
         },
       },
       {
@@ -187,7 +169,7 @@ export function slackSharingLinkMessage(links: LinkEntity[]) {
 
 export function slackSharedLinkMessage(links: LinkEntity[]) {
   const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
-    const createdAt = DateTime.fromJSDate(link.createdAt).toLocal().toFormat('yy년 MM월 dd일');
+    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('yy년 MM월 dd일');
     const sharingUser = `<@${link.sharingUser.slackUserId}>님이 공유했어요`;
     const content = link.content.slice(0, 80);
     return slackLinkMessage(createdAt, sharingUser, content, link.url);
