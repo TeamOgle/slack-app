@@ -12,9 +12,11 @@ import { CommonEntity } from './common.entity';
 import { SlackUserEntity } from './slack-users.entity';
 import { LinkEntity } from './links.entity';
 import { TeamEntity } from './teams.entity';
+import { IsString } from 'class-validator';
 
 @Entity('users')
 export class UserEntity extends CommonEntity {
+  @IsString()
   @Column({ nullable: true })
   slackUserId: string;
 

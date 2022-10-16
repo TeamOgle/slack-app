@@ -1,10 +1,15 @@
 import { Exclude } from 'class-transformer';
-import { IsULID } from 'src/common/decorators/is-ulid.decorator';
-import { CreateDateColumn, DeleteDateColumn, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { IsUUID } from 'class-validator';
+import {
+  CreateDateColumn,
+  DeleteDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export abstract class CommonEntity {
-  @IsULID()
-  @PrimaryColumn({ type: 'varchar' })
+  @IsUUID()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // 해당 열이 추가된 시각을 자동으로 기록

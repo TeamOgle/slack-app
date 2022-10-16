@@ -12,7 +12,6 @@ import {
 import type { InteractionPayload } from './interfaces';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ulid } from 'ulid';
 import {
   CONTENT_ACTION_ID,
   LINK_ACTION_ID,
@@ -91,13 +90,11 @@ export class SlackService {
 
     const tags = this.defaultTags.map((tag) => {
       const tagEntity = this.tagRepository.create({
-        id: ulid(),
         name: tag,
       });
       return tagEntity;
     });
     const teamEntity = this.teamRepository.create({
-      id: ulid(),
       slackTeam,
       tags,
     });
@@ -131,7 +128,6 @@ export class SlackService {
 
     const userEntities = slackUsers.map((slackUser) => {
       const user = this.userRepository.create({
-        id: ulid(),
         team,
         slackUser,
       });
@@ -178,7 +174,6 @@ export class SlackService {
     );
 
     const linkEntity = this.linkRepository.create({
-      id: ulid(),
       url,
       content,
       sharingUser,
