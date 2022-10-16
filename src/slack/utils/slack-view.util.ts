@@ -33,7 +33,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
     },
     submit: {
       type: 'plain_text',
-      text: '제출',
+      text: '제텔로 공유하기',
       emoji: true,
     },
     close: {
@@ -48,14 +48,14 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_users_select',
           placeholder: {
             type: 'plain_text',
-            text: 'Select companions',
+            text: '함께 볼 사람 선택',
             emoji: true,
           },
           action_id: USER_ACTION_ID,
         },
         label: {
           type: 'plain_text',
-          text: '동료',
+          text: '누구와 정보를 공유 할까요?',
           emoji: true,
         },
       },
@@ -65,7 +65,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_static_select',
           placeholder: {
             type: 'plain_text',
-            text: 'Select options',
+            text: '태그로 정보를 분류해요',
             emoji: true,
           },
           options: tagOptions,
@@ -73,7 +73,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         },
         label: {
           type: 'plain_text',
-          text: 'Label',
+          text: '태그 선택',
           emoji: true,
         },
       },
@@ -85,10 +85,15 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         element: {
           type: 'plain_text_input',
           action_id: LINK_ACTION_ID,
+          placeholder: {
+            type: 'plain_text',
+            text: '링크 붙여넣기',
+            emoji: true,
+          },
         },
         label: {
           type: 'plain_text',
-          text: '링크',
+          text: '공유할 링크 주소를 입력해 주세요',
           emoji: true,
         },
       },
@@ -98,10 +103,15 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'plain_text_input',
           multiline: true,
           action_id: CONTENT_ACTION_ID,
+          placeholder: {
+            type: 'plain_text',
+            text: '공유하고 싶은 이유를 알려주면 함께 볼 사람들의 관심도가 올라가요🔥',
+            emoji: true,
+          },
         },
         label: {
           type: 'plain_text',
-          text: '내용',
+          text: '공유하고 싶은 이유는 무엇인가요?',
           emoji: true,
         },
       },
