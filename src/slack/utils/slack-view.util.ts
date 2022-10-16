@@ -65,7 +65,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_static_select',
           placeholder: {
             type: 'plain_text',
-            text: '태그로 정보를 분류해요',
+            text: '태그 선택',
             emoji: true,
           },
           options: tagOptions,
@@ -73,7 +73,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         },
         label: {
           type: 'plain_text',
-          text: '태그 선택',
+          text: '태그로 정보를 분류해요',
           emoji: true,
         },
       },
