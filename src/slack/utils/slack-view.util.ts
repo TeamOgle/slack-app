@@ -1,4 +1,5 @@
 import { TagEntity } from '../../database/entities/tags.entity';
+import { LinkEntity } from '../../database/entities/links.entity';
 import type {
   ModalView,
   Block,
@@ -6,6 +7,7 @@ import type {
   MessageAttachment,
   PlainTextOption,
 } from '@slack/web-api';
+import { DateTime } from 'luxon';
 
 export const USER_ACTION_ID = 'selected_users';
 export const TAG_ACTION_ID = 'selected_options';
@@ -107,7 +109,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
   };
 }
 
-export function slackMessageBlock(
+export function slackModalMessage(
   receiverMentions: string,
   userId: string,
   tags: string,
@@ -161,4 +163,52 @@ export function slackMessageBlock(
     },
   ];
   return { messageBlocks, messageAttachments };
+}
+
+export function slackSharingLinkMessage(links: LinkEntity[]) {
+  const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
+    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('yy년 MM월 dd일');
+    const sharedUsers = link.sharedUsers.map((user) => `<@${user.slackUserId}>`).join(' ');
+    const content = link.content.slice(0, 80);
+    return slackLinkMessage(createdAt, `${sharedUsers}님에게 공유했어요`, content, link.url);
+  });
+  return slackLinkBlocks(messageBlocks, '공유한 링크가 없습니다');
+}
+
+export function slackSharedLinkMessage(links: LinkEntity[]) {
+  const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
+    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('yy년 MM월 dd일');
+    const sharingUser = `<@${link.sharingUser.slackUserId}>님이 공유했어요`;
+    const content = link.content.slice(0, 80);
+    return slackLinkMessage(createdAt, sharingUser, content, link.url);
+  });
+  return slackLinkBlocks(messageBlocks, '공유받은 링크가 없습니다');
+}
+
+function slackLinkMessage(createdAt: string, userMessage: string, content: string, url: string) {
+  return {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: `${createdAt}에 ${userMessage}\n${content}${
+        content.length === 80 ? '...' : ''
+      }\n*<${url}|👉 지금 읽어보기>*\n\n`,
+    },
+  };
+}
+
+function slackLinkBlocks(messageBlocks: (Block | KnownBlock)[], emptyMessage: string) {
+  return {
+    blocks: messageBlocks.length
+      ? messageBlocks
+      : [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `${emptyMessage}\n\n`,
+            },
+          },
+        ],
+  };
 }

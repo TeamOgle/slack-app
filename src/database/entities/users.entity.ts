@@ -1,4 +1,13 @@
-import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 import { CommonEntity } from './common.entity';
 import { SlackUserEntity } from './slack-users.entity';
 import { LinkEntity } from './links.entity';
@@ -6,6 +15,9 @@ import { TeamEntity } from './teams.entity';
 
 @Entity('users')
 export class UserEntity extends CommonEntity {
+  @Column({ nullable: true })
+  slackUserId: string;
+
   @ManyToOne(() => TeamEntity, (team: TeamEntity) => team.users)
   @JoinColumn([
     // foreignkey 정보들

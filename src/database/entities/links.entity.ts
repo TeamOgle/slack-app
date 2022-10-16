@@ -11,6 +11,11 @@ export class LinkEntity extends CommonEntity {
   @Column({ type: 'varchar', length: 500, unique: false, nullable: false })
   url: string;
 
+  @IsNotEmpty()
+  @IsUrl()
+  @Column({ type: 'text', unique: false, nullable: false })
+  content: string;
+
   @ManyToOne(() => UserEntity, (sharingUser: UserEntity) => sharingUser.sharingLinks)
   @JoinColumn([
     // foreignkey 정보들

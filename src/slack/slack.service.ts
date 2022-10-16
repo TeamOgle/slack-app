@@ -16,8 +16,10 @@ import { ulid } from 'ulid';
 import {
   CONTENT_ACTION_ID,
   LINK_ACTION_ID,
-  slackMessageBlock,
+  slackSharingLinkMessage,
+  slackModalMessage,
   slackModalView,
+  slackSharedLinkMessage,
   TAG_ACTION_ID,
   USER_ACTION_ID,
 } from './utils';
@@ -155,24 +157,18 @@ export class SlackService {
   }
 
   async sendLink(payload: InteractionPayload) {
-    const { receiveUsers, tagIds, url } = await this.postSlackMessage(payload);
+    const { receiveUsers, tagIds, url, content } = await this.postSlackMessage(payload);
 
-    const sharingUser = await this.userRepository.findOne({
-      relations: { slackUser: true },
-      where: {
-        slackUser: {
-          id: payload.user.id,
-        },
+    const sharingUser = await this.userRepository.findOneBy({
+      slackUser: {
+        id: payload.user.id,
       },
     });
     const sharedUsers = await Promise.all(
       receiveUsers.map((userId) =>
-        this.userRepository.findOne({
-          relations: { slackUser: true },
-          where: {
-            slackUser: {
-              id: userId,
-            },
+        this.userRepository.findOneBy({
+          slackUser: {
+            id: userId,
           },
         }),
       ),
@@ -184,6 +180,7 @@ export class SlackService {
     const linkEntity = this.linkRepository.create({
       id: ulid(),
       url,
+      content,
       sharingUser,
       sharedUsers,
       tags,
@@ -219,7 +216,7 @@ export class SlackService {
       throw new BadRequestException('no channels');
     }
 
-    const { messageBlocks, messageAttachments } = slackMessageBlock(
+    const { messageBlocks, messageAttachments } = slackModalMessage(
       receiverMentions,
       user.id,
       tags.map((tag) => `#${tag.text.text}`).join(' '),
@@ -235,6 +232,26 @@ export class SlackService {
       attachments: messageAttachments,
     });
 
-    return { receiveUsers, tagIds: tags.map((tag) => tag.value), url: link };
+    return { receiveUsers, tagIds: tags.map((tag) => tag.value), url: link, content };
+  }
+
+  async getSharingLinks(slackUserId: string) {
+    const user = await this.userRepository.findOneBy({ slackUser: { id: slackUserId } });
+    const links = await this.linkRepository.find({
+      relations: { sharedUsers: true },
+      where: { sharingUser: { id: user.id } },
+    });
+
+    return slackSharingLinkMessage(links);
+  }
+
+  async getSharedLinks(slackUserId: string) {
+    const user = await this.userRepository.findOneBy({ slackUser: { id: slackUserId } });
+    const links = await this.linkRepository.find({
+      relations: { sharingUser: true },
+      where: { sharedUsers: { id: user.id } },
+    });
+
+    return slackSharedLinkMessage(links);
   }
 }
