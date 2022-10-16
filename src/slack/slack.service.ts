@@ -54,7 +54,7 @@ export class SlackService {
     this.slack = new WebClient();
   }
 
-  async accessWorkspace(code: string): Promise<void> {
+  async accessWorkspace(code: string) {
     const result = await this.slack.oauth.v2.access({
       code,
       client_id: this.config.clientId,
@@ -66,6 +66,8 @@ export class SlackService {
 
     const { slackTeam, team } = await this.saveTeam(id, name, result.access_token, enterpriseData);
     await this.saveUsers(userData, slackTeam, team);
+
+    return { url: `slack://open?team=${slackTeam.id}` };
   }
 
   private async saveTeam(

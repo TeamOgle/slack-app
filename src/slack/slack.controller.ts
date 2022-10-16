@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Redirect,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { SlackService } from './slack.service';
 import type { SlackShortCutDto, SlackEventDto, SlackCommandDto } from './dtos';
 import type { ShortCutPayload, InteractionPayload } from './interfaces';
@@ -29,7 +40,7 @@ export class SlackController {
     return { challenge: slackEventDto.challenge };
   }
 
-  @HttpCode(HttpStatus.OK)
+  @Redirect('slack://open', HttpStatus.MOVED_PERMANENTLY)
   @Get('auth')
   auth(@Query('code') code) {
     return this.slackService.accessWorkspace(code);
