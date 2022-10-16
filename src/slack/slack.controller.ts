@@ -40,7 +40,7 @@ export class SlackController {
     return { challenge: slackEventDto.challenge };
   }
 
-  @Redirect('slack://open', HttpStatus.OK)
+  @Redirect('slack://open', HttpStatus.FOUND)
   @Get('auth')
   auth(@Query('code') code) {
     return this.slackService.accessWorkspace(code);
