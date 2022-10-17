@@ -65,7 +65,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           type: 'multi_static_select',
           placeholder: {
             type: 'plain_text',
-            text: '태그를 선택해 정보를 분류해 보세요',
+            text: '태그로 정보를 분류해 보세요',
             emoji: true,
           },
           options: tagOptions,
@@ -84,7 +84,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           action_id: LINK_ACTION_ID,
           placeholder: {
             type: 'plain_text',
-            text: '공유할 링크 주소를 입력해 주세요',
+            text: '공유할 링크를 입력해 주세요',
             emoji: true,
           },
         },
@@ -105,7 +105,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
           action_id: CONTENT_ACTION_ID,
           placeholder: {
             type: 'plain_text',
-            text: '공유하는 이유를 알려주면 함께 볼 사람들의 관심도가 올라가요',
+            text: '생각을 공유하고 팀원들과 이야기 나눠보세요!',
             emoji: true,
           },
         },

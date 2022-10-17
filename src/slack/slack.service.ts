@@ -68,11 +68,9 @@ export class SlackService {
     if (teamData) {
       const { slackTeam, team } = teamData;
       await this.saveUsers(userData, slackTeam, team);
-
-      return `<script type="text/javascript">location.href = "slack://open?team=${slackTeam.id}";</script>`;
     }
 
-    return '<script type="text/javascript">location.href = "slack://open";</script>';
+    return `<script type="text/javascript">location.href = "slack://open?team=${id}";</script>`;
   }
 
   private async saveTeam(
