@@ -95,6 +95,9 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         },
       },
       {
+        type: 'divider',
+      },
+      {
         type: 'input',
         element: {
           type: 'plain_text_input',

@@ -64,10 +64,15 @@ export class SlackService {
     const { id, name } = result.team;
     const enterpriseData = result.enterprise;
 
-    const { slackTeam, team } = await this.saveTeam(id, name, result.access_token, enterpriseData);
-    await this.saveUsers(userData, slackTeam, team);
+    const teamData = await this.saveTeam(id, name, result.access_token, enterpriseData);
+    if (teamData) {
+      const { slackTeam, team } = teamData;
+      await this.saveUsers(userData, slackTeam, team);
 
-    return `<script type="text/javascript">location.href = "slack://open?team=${slackTeam.id}";</script>`;
+      return `<script type="text/javascript">location.href = "slack://open?team=${slackTeam.id}";</script>`;
+    }
+
+    return '<script type="text/javascript">location.href = "slack://open";</script>';
   }
 
   private async saveTeam(
@@ -75,10 +80,10 @@ export class SlackService {
     name: string,
     accessToken: string,
     enterpriseData?: Enterprise,
-  ): Promise<{ slackTeam: SlackTeamEntity; team: TeamEntity }> {
+  ): Promise<{ slackTeam: SlackTeamEntity; team: TeamEntity } | undefined> {
     const exSlackTeam = await this.slackTeamRepository.findOneBy({ id });
     if (exSlackTeam) {
-      throw new BadRequestException('exist team');
+      return;
     }
 
     const slackTeamEntity = this.slackTeamRepository.create({
