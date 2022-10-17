@@ -165,7 +165,7 @@ export function slackModalMessage(
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${content} \n\n*<${link}|👉 지금 읽어보기>*`,
+            text: `${content} \n\n*<${link}|👉 지금 보러가기>*`,
           },
         },
       ],
@@ -177,7 +177,7 @@ export function slackModalMessage(
 
 export function slackSharingLinkMessage(links: LinkEntity[]) {
   const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
-    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('yy년 MM월 dd일');
+    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('📘 yy년 MM월 dd일');
     const sharedUsers = link.sharedUsers.map((user) => `<@${user.slackUserId}>`).join(' ');
     const content = link.content.slice(0, 80);
     return slackLinkMessage(createdAt, `${sharedUsers}님에게 공유했어요`, content, link.url);
@@ -187,7 +187,7 @@ export function slackSharingLinkMessage(links: LinkEntity[]) {
 
 export function slackSharedLinkMessage(links: LinkEntity[]) {
   const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
-    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('yy년 MM월 dd일');
+    const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('📙 yy년 MM월 dd일');
     const sharingUser = `<@${link.sharingUser.slackUserId}>님이 공유했어요`;
     const content = link.content.slice(0, 80);
     return slackLinkMessage(createdAt, sharingUser, content, link.url);
@@ -200,9 +200,9 @@ function slackLinkMessage(createdAt: string, userMessage: string, content: strin
     type: 'section',
     text: {
       type: 'mrkdwn',
-      text: `${createdAt}에 ${userMessage}\n${content}${
+      text: `*${createdAt}에 ${userMessage}*\n${content}${
         content.length === 80 ? '...' : ''
-      }\n*<${url}|👉 지금 읽어보기>*\n\n`,
+      }\n*<${url}|지금 보러가기>*\n\n`,
     },
   };
 }
