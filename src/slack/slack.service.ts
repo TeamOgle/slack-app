@@ -211,6 +211,7 @@ export class SlackService {
       types: 'public_channel,private_channel',
     });
     const channels = conversations.channels.filter((channel) => channel.is_member);
+    console.log(conversations);
 
     if (!channels.length) {
       throw new BadRequestException('no channels');
