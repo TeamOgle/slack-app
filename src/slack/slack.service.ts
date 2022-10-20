@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import { type UsersListResponse, WebClient } from '@slack/web-api';
+import { WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
 import {
   SlackUserEntity,
@@ -60,14 +60,13 @@ export class SlackService {
       client_id: this.config.clientId,
       client_secret: this.config.clientSecret,
     });
-    const userData = await this.slack.users.list({ token: result.access_token });
     const { id, name } = result.team;
     const enterpriseData = result.enterprise;
 
     const teamData = await this.saveTeam(id, name, result.access_token, enterpriseData);
     if (teamData) {
       const { slackTeam, team } = teamData;
-      await this.saveUsers(userData, slackTeam, team);
+      await this.saveUsers(slackTeam, team);
     }
 
     return `<script type="text/javascript">location.href = "slack://open?team=${id}";</script>`;
@@ -108,14 +107,22 @@ export class SlackService {
     return { slackTeam, team };
   }
 
-  private async saveUsers(
-    userData: UsersListResponse,
-    slackTeam: SlackTeamEntity,
-    team: TeamEntity,
-  ) {
-    const validMembers = userData.members.filter(
+  private async saveUsers(slackTeam: SlackTeamEntity, team: TeamEntity) {
+    let userData = await this.slack.users.list({ token: slackTeam.accessToken });
+    let validMembers = userData.members.filter(
       (member) => !member.is_bot && !member.deleted && member.is_email_confirmed,
     );
+    while (userData.response_metadata.next_cursor.length) {
+      userData = await this.slack.conversations.list({
+        token: slackTeam.accessToken,
+        cursor: userData.response_metadata.next_cursor,
+      });
+      const newValidMembers = userData.members.filter(
+        (member) => !member.is_bot && !member.deleted && member.is_email_confirmed,
+      );
+      validMembers = [...validMembers, ...newValidMembers];
+    }
+
     const slackUserEntities = validMembers.map((member) => {
       const { id, name, real_name, profile } = member;
       const slackUser = this.slackUserRepository.create({
@@ -174,6 +181,9 @@ export class SlackService {
         }),
       ),
     );
+    if (!sharedUsers.length) {
+      throw new BadRequestException('no users');
+    }
     const tags = await Promise.all(
       tagIds.map((tagId) => this.tagRepository.findOneBy({ id: tagId })),
     );

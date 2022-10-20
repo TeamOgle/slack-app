@@ -52,6 +52,7 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             emoji: true,
           },
           action_id: USER_ACTION_ID,
+          focus_on_load: true,
         },
         label: {
           type: 'plain_text',
