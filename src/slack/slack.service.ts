@@ -206,12 +206,20 @@ export class SlackService {
 
     const receiverMentions = receiveUsers.map((user) => `<@${user}>`).join(' ');
 
-    const conversations = await this.slack.conversations.list({
+    let conversations = await this.slack.conversations.list({
       token: slackTeam.accessToken,
       types: 'public_channel,private_channel',
     });
-    const channels = conversations.channels.filter((channel) => channel.is_member);
-    console.log(conversations);
+    let channels = conversations.channels.filter((channel) => channel.is_member);
+
+    while (conversations.response_metadata.next_cursor.length && !channels.length) {
+      conversations = await this.slack.conversations.list({
+        token: slackTeam.accessToken,
+        types: 'public_channel,private_channel',
+        cursor: conversations.response_metadata.next_cursor,
+      });
+      channels = conversations.channels.filter((channel) => channel.is_member);
+    }
 
     if (!channels.length) {
       throw new BadRequestException('no channels');
