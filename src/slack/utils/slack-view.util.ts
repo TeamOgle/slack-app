@@ -10,6 +10,7 @@ import type {
 import { DateTime } from 'luxon';
 
 export const USER_ACTION_ID = 'selected_users';
+export const USER_OPTION_ACTION_ID = 'user_option';
 export const TAG_ACTION_ID = 'selected_options';
 export const LINK_ACTION_ID = 'link';
 export const CONTENT_ACTION_ID = 'contents';
@@ -45,6 +46,37 @@ export function slackModalView(tags: TagEntity[]): ModalView {
       {
         type: 'input',
         element: {
+          type: 'radio_buttons',
+          options: [
+            {
+              text: {
+                type: 'plain_text',
+                text: '개별 공유하기',
+                emoji: true,
+              },
+              value: 'selected_users',
+            },
+            {
+              text: {
+                type: 'plain_text',
+                text: '채널 멤버 전체에게 공유하기',
+                emoji: true,
+              },
+              value: 'selected_all',
+            },
+          ],
+          action_id: USER_OPTION_ACTION_ID,
+        },
+        label: {
+          type: 'plain_text',
+          text: ' ',
+          emoji: true,
+        },
+        dispatch_action: true,
+      },
+      {
+        type: 'input',
+        element: {
           type: 'multi_users_select',
           placeholder: {
             type: 'plain_text',
@@ -52,7 +84,6 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             emoji: true,
           },
           action_id: USER_ACTION_ID,
-          focus_on_load: true,
         },
         label: {
           type: 'plain_text',
@@ -117,6 +148,35 @@ export function slackModalView(tags: TagEntity[]): ModalView {
         },
       },
     ],
+  };
+}
+
+export function slackUpdatedModalView(prevView: ModalView, isToAllUsers: boolean): ModalView {
+  const blocks = prevView.blocks;
+  if (!isToAllUsers) {
+    const userSelect: Block | KnownBlock = {
+      type: 'input',
+      element: {
+        type: 'multi_users_select',
+        placeholder: {
+          type: 'plain_text',
+          text: '누구와 정보를 공유 할까요?',
+          emoji: true,
+        },
+        action_id: USER_ACTION_ID,
+      },
+      label: {
+        type: 'plain_text',
+        text: ' ',
+        emoji: true,
+      },
+    };
+    blocks.splice(1, 0, userSelect);
+  }
+
+  return {
+    ...prevView,
+    blocks,
   };
 }
 

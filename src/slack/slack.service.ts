@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import { WebClient } from '@slack/web-api';
+import { WebClient, type ModalView } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
 import {
   SlackUserEntity,
@@ -164,6 +164,22 @@ export class SlackService {
     });
   }
 
+  async updateModal(slackTeamId: string, view: ModalView) {
+    const team = await this.teamRepository.findOne({
+      relations: { slackTeam: true, tags: true },
+      where: {
+        slackTeam: {
+          id: slackTeamId,
+        },
+      },
+    });
+    await this.slack.views.update({
+      token: team.slackTeam.accessToken,
+      view: slackModalView(team.tags),
+      view_id: view.external_id,
+    });
+  }
+
   async sendLink(payload: InteractionPayload) {
     const { receiveUsers, tagIds, url, content } = await this.postSlackMessage(payload);
 
@@ -201,6 +217,7 @@ export class SlackService {
   async postSlackMessage(payload: InteractionPayload) {
     const slackTeam = await this.slackTeamRepository.findOneBy({ id: payload.team.id });
     const blocks = Object.values(payload.view.state.values);
+    console.log(payload.view.state.values);
 
     const values = new Map();
     for (let i = 0; i < blocks.length; i++) {

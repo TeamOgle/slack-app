@@ -1,3 +1,5 @@
+import type { ModalView } from '@slack/web-api';
+
 // https://api.slack.com/reference/interaction-payloads/shortcuts
 export interface ShortCutPayload {
   type: 'shortcut' | 'message_action';
@@ -17,4 +19,10 @@ export interface InteractionPayload {
   team: { id: string };
   user: { id: string };
   view: InteractionView;
+}
+
+export interface BlockActionPayload {
+  type: 'block_actions';
+  team: { id: string };
+  view: ModalView;
 }

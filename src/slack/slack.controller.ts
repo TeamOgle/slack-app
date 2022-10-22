@@ -1,7 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { SlackService } from './slack.service';
 import type { SlackShortCutDto, SlackEventDto, SlackCommandDto } from './dtos';
-import type { ShortCutPayload, InteractionPayload } from './interfaces';
+import type { ShortCutPayload, BlockActionPayload, InteractionPayload } from './interfaces';
 
 @Controller('slack')
 export class SlackController {
@@ -11,12 +22,24 @@ export class SlackController {
   @Post('events')
   async callModal(@Req() req, @Res() res) {
     const slackShortCutDto: SlackShortCutDto = req.body;
-    const payload: ShortCutPayload | InteractionPayload = JSON.parse(slackShortCutDto.payload);
+    const payload: ShortCutPayload | BlockActionPayload | InteractionPayload = JSON.parse(
+      slackShortCutDto.payload,
+    );
 
-    if (payload.type === 'shortcut') {
-      await this.slackService.callModal(payload.team.id, payload.trigger_id);
-    } else if (payload.type === 'view_submission') {
-      await this.slackService.sendLink(payload);
+    console.log(payload);
+
+    switch (payload.type) {
+      case 'shortcut':
+        await this.slackService.callModal(payload.team.id, payload.trigger_id);
+        break;
+      case 'block_actions':
+        await this.slackService.updateModal(payload.team.id, payload.view);
+        break;
+      case 'view_submission':
+        await this.slackService.sendLink(payload);
+        break;
+      default:
+        throw new BadRequestException('invalid event');
     }
 
     return res.json();
