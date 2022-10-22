@@ -24,7 +24,7 @@ import {
 } from './utils';
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 import { TagEntity } from '../database/entities/tags.entity';
-import { slackUpdatedModalView } from './utils/slack-view.util';
+import { slackUpdatedModalView, USER_OPTION_ACTION_ID } from './utils/slack-view.util';
 
 @Injectable()
 export class SlackService {
@@ -193,15 +193,27 @@ export class SlackService {
         id: payload.user.id,
       },
     });
-    const sharedUsers = await Promise.all(
-      receiveUsers.map((userId) =>
-        this.userRepository.findOneBy({
-          slackUser: {
-            id: userId,
-          },
-        }),
-      ),
-    );
+    let sharedUsers;
+    if (receiveUsers) {
+      sharedUsers = await Promise.all(
+        receiveUsers.map((userId) =>
+          this.userRepository.findOneBy({
+            slackUser: {
+              id: userId,
+            },
+          }),
+        ),
+      );
+    } else {
+      const slackTeam = await this.slackTeamRepository.findOne({
+        relations: { slackUsers: true },
+        where: {
+          id: payload.team.id,
+        },
+      });
+      sharedUsers = slackTeam.slackUsers;
+    }
+
     if (!sharedUsers.length) {
       throw new BadRequestException('no users');
     }
@@ -222,7 +234,6 @@ export class SlackService {
   async postSlackMessage(payload: InteractionPayload) {
     const slackTeam = await this.slackTeamRepository.findOneBy({ id: payload.team.id });
     const blocks = Object.values(payload.view.state.values);
-    console.log(payload.view.state.values);
 
     const values = new Map();
     for (let i = 0; i < blocks.length; i++) {
@@ -231,12 +242,19 @@ export class SlackService {
     }
 
     const { user } = payload;
-    const receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
+    const userOption = values.get(USER_OPTION_ACTION_ID).selected_option.value;
+    let receiveUsers;
+    if (userOption === 'selected_users') {
+      receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
+    }
     const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID];
     const link = values.get(LINK_ACTION_ID).value;
     const content = values.get(CONTENT_ACTION_ID).value;
 
-    const receiverMentions = receiveUsers.map((user) => `<@${user}>`).join(' ');
+    const receiverMentions =
+      userOption === 'selected_all'
+        ? '<!here|here>'
+        : `${receiveUsers.map((user) => `<@${user}>`).join(' ')}님!`;
 
     let conversations = await this.slack.conversations.list({
       token: slackTeam.accessToken,

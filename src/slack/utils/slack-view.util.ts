@@ -218,7 +218,7 @@ export function slackModalMessage(
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `*${receiverMentions}님! 이거 같이 볼까요? 👀*`,
+        text: `*${receiverMentions} 이거 같이 볼까요? 👀*`,
       },
     },
     {
