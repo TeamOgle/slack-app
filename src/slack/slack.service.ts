@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import { WebClient, type ModalView } from '@slack/web-api';
+import { WebClient } from '@slack/web-api';
 import slackConfig from 'src/config/slack.config';
 import {
   SlackUserEntity,
@@ -9,7 +9,7 @@ import {
   UserEntity,
   LinkEntity,
 } from 'src/database/entities';
-import type { InteractionPayload } from './interfaces';
+import type { BlockActionPayload, InteractionPayload } from './interfaces';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -24,6 +24,7 @@ import {
 } from './utils';
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 import { TagEntity } from '../database/entities/tags.entity';
+import { slackUpdatedModalView } from './utils/slack-view.util';
 
 @Injectable()
 export class SlackService {
@@ -164,19 +165,23 @@ export class SlackService {
     });
   }
 
-  async updateModal(slackTeamId: string, view: ModalView) {
+  async updateModal(payload: BlockActionPayload) {
     const team = await this.teamRepository.findOne({
       relations: { slackTeam: true, tags: true },
       where: {
         slackTeam: {
-          id: slackTeamId,
+          id: payload.team.id,
         },
       },
     });
+
     await this.slack.views.update({
       token: team.slackTeam.accessToken,
-      view: slackModalView(team.tags),
-      view_id: view.external_id,
+      view: slackUpdatedModalView(
+        payload.view,
+        payload.actions[0].selected_option.value === 'selected_all',
+      ),
+      view_id: payload.view.id,
     });
   }
 

@@ -26,14 +26,12 @@ export class SlackController {
       slackShortCutDto.payload,
     );
 
-    console.log(payload);
-
     switch (payload.type) {
       case 'shortcut':
         await this.slackService.callModal(payload.team.id, payload.trigger_id);
         break;
       case 'block_actions':
-        await this.slackService.updateModal(payload.team.id, payload.view);
+        await this.slackService.updateModal(payload);
         break;
       case 'view_submission':
         await this.slackService.sendLink(payload);

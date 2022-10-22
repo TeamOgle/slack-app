@@ -8,6 +8,7 @@ import type {
   PlainTextOption,
 } from '@slack/web-api';
 import { DateTime } from 'luxon';
+import type { BlockActionView } from '../interfaces';
 
 export const USER_ACTION_ID = 'selected_users';
 export const USER_OPTION_ACTION_ID = 'user_option';
@@ -66,6 +67,14 @@ export function slackModalView(tags: TagEntity[]): ModalView {
             },
           ],
           action_id: USER_OPTION_ACTION_ID,
+          initial_option: {
+            text: {
+              type: 'plain_text',
+              text: '개별 공유하기',
+              emoji: true,
+            },
+            value: 'selected_users',
+          },
         },
         label: {
           type: 'plain_text',
@@ -151,9 +160,11 @@ export function slackModalView(tags: TagEntity[]): ModalView {
   };
 }
 
-export function slackUpdatedModalView(prevView: ModalView, isToAllUsers: boolean): ModalView {
+export function slackUpdatedModalView(prevView: BlockActionView, isToAllUsers: boolean): ModalView {
   const blocks = prevView.blocks;
-  if (!isToAllUsers) {
+  if (isToAllUsers) {
+    blocks.splice(1, 1);
+  } else {
     const userSelect: Block | KnownBlock = {
       type: 'input',
       element: {
@@ -175,7 +186,22 @@ export function slackUpdatedModalView(prevView: ModalView, isToAllUsers: boolean
   }
 
   return {
-    ...prevView,
+    type: 'modal',
+    title: {
+      type: 'plain_text',
+      text: 'Zettel',
+      emoji: true,
+    },
+    submit: {
+      type: 'plain_text',
+      text: '제텔로 공유하기',
+      emoji: true,
+    },
+    close: {
+      type: 'plain_text',
+      text: '닫기',
+    },
+    callback_id: 'call_modal',
     blocks,
   };
 }
