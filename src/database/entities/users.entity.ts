@@ -20,6 +20,10 @@ export class UserEntity extends CommonEntity {
   @Column({ nullable: true })
   slackUserId: string;
 
+  @IsString()
+  @Column({ nullable: true })
+  teamId: string;
+
   @ManyToOne(() => TeamEntity, (team: TeamEntity) => team.users)
   @JoinColumn([
     // foreignkey 정보들

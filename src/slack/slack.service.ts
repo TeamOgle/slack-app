@@ -295,17 +295,21 @@ export class SlackService {
   }
 
   async getSharingLinks(slackUserId: string) {
-    const user = await this.userRepository.findOneBy({ slackUser: { id: slackUserId } });
+    const user = await this.userRepository.findOneBy({ slackUserId });
     const links = await this.linkRepository.find({
       relations: { sharedUsers: true },
       where: { sharingUser: { id: user.id } },
     });
+    const userCount = await this.userRepository.count({
+      relations: { team: true },
+      where: { team: { id: user.teamId } },
+    });
 
-    return slackSharingLinkMessage(links);
+    return slackSharingLinkMessage(links, userCount);
   }
 
   async getSharedLinks(slackUserId: string) {
-    const user = await this.userRepository.findOneBy({ slackUser: { id: slackUserId } });
+    const user = await this.userRepository.findOneBy({ slackUserId });
     const links = await this.linkRepository.find({
       relations: { sharingUser: true },
       where: { sharedUsers: { id: user.id } },

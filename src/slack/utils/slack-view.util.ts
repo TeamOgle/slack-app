@@ -262,12 +262,15 @@ export function slackModalMessage(
   return { messageBlocks, messageAttachments };
 }
 
-export function slackSharingLinkMessage(links: LinkEntity[]) {
+export function slackSharingLinkMessage(links: LinkEntity[], userCount: number) {
   const messageBlocks: (Block | KnownBlock)[] = links.map((link) => {
     const createdAt = DateTime.fromJSDate(link.createdAt).toFormat('📘 yy년 MM월 dd일');
-    const sharedUsers = link.sharedUsers.map((user) => `<@${user.slackUserId}>`).join(' ');
+    const sharedUsers =
+      link.sharedUsers.length === userCount
+        ? '모두'
+        : `${link.sharedUsers.map((user) => `<@${user.slackUserId}>`).join(' ')}님`;
     const content = link.content.slice(0, 80);
-    return slackLinkMessage(createdAt, `${sharedUsers}님에게 공유했어요`, content, link.url);
+    return slackLinkMessage(createdAt, `${sharedUsers}에게 공유했어요`, content, link.url);
   });
   return slackLinkBlocks(messageBlocks, '공유한 링크가 없습니다');
 }
