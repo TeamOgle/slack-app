@@ -205,13 +205,13 @@ export class SlackService {
         ),
       );
     } else {
-      const slackTeam = await this.slackTeamRepository.findOne({
-        relations: { slackUsers: true },
+      const team = await this.teamRepository.findOne({
+        relations: { users: true },
         where: {
-          id: payload.team.id,
+          id: sharingUser.teamId,
         },
       });
-      sharedUsers = slackTeam.slackUsers;
+      sharedUsers = team.users;
     }
 
     if (!sharedUsers.length) {
