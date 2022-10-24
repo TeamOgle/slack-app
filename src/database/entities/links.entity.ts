@@ -26,12 +26,10 @@ export class LinkEntity extends CommonEntity {
   ])
   sharingUser: UserEntity;
 
-  @ManyToMany(() => UserEntity, (sharedUser: UserEntity) => sharedUser.sharedLinks, {
-    cascade: ['insert', 'update'],
-  })
+  @ManyToMany(() => UserEntity, (sharedUser: UserEntity) => sharedUser.sharedLinks)
   sharedUsers: UserEntity[];
 
-  @ManyToMany(() => TagEntity, (tag: TagEntity) => tag.links, { cascade: ['insert', 'update'] })
+  @ManyToMany(() => TagEntity, (tag: TagEntity) => tag.links)
   @JoinTable({
     // table
     name: 'link_tags',
