@@ -6,7 +6,7 @@ import slackConfig from './config/slack.config';
 import { validationSchema } from './config/validation-schema';
 import { SlackModule } from './slack/slack.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { dataSourceOptions } from './config/data-source';
 
 @Module({
   imports: [
@@ -16,18 +16,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
       isGlobal: true,
       validationSchema,
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.ZETTEL_DB_HOST,
-      port: 3306,
-      username: process.env.ZETTEL_DB_USER,
-      password: process.env.ZETTEL_DB_PASSWORD,
-      database: process.env.ZETTEL_DB_NAME,
-      entities: [`${__dirname}/database/entities/*.entity{.ts,.js}`],
-      synchronize: false,
-      timezone: 'UTC',
-      namingStrategy: new SnakeNamingStrategy(),
-    }),
+    TypeOrmModule.forRoot(dataSourceOptions),
     SlackModule,
   ],
   controllers: [AppController],

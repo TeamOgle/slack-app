@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsString, IsUrl, MaxLength } from 'class-validator';
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
 import { CommonEntity } from './common.entity';
 import { UserEntity } from './users.entity';
@@ -8,13 +8,19 @@ import { TagEntity } from './tags.entity';
 export class LinkEntity extends CommonEntity {
   @IsNotEmpty()
   @IsUrl()
+  @MaxLength(500)
   @Column({ type: 'varchar', length: 500, unique: false, nullable: false })
   url: string;
 
   @IsNotEmpty()
-  @IsUrl()
+  @IsString()
   @Column({ type: 'text', unique: false, nullable: false })
   content: string;
+
+  @IsString()
+  @MaxLength(50)
+  @Column({ type: 'varchar', length: 50, unique: false, nullable: true })
+  title: string;
 
   @ManyToOne(() => UserEntity, (sharingUser: UserEntity) => sharingUser.sharingLinks)
   @JoinColumn([
