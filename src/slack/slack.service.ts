@@ -25,6 +25,7 @@ import {
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 import { TagEntity } from '../database/entities/tags.entity';
 import { slackUpdatedModalView, USER_OPTION_ACTION_ID } from './utils/slack-view.util';
+import * as ogs from 'open-graph-scraper';
 
 @Injectable()
 export class SlackService {
@@ -187,9 +188,15 @@ export class SlackService {
   async sendLink(payload: InteractionPayload) {
     const slackModalData = await this.getModalData(payload);
 
-    const linkId = await this.saveLink(payload.user.id, slackModalData);
+    const link = await this.saveLink(payload.user.id, slackModalData);
 
-    await this.postSlackMessage(payload.team.id, payload.user.id, linkId, slackModalData);
+    await this.postSlackMessage(
+      payload.team.id,
+      payload.user.id,
+      link.id,
+      slackModalData,
+      link.title,
+    );
   }
 
   async getModalData(payload: InteractionPayload): Promise<SlackModalData> {
@@ -220,7 +227,7 @@ export class SlackService {
     };
   }
 
-  async saveLink(userId: string, slackModalData: SlackModalData): Promise<string> {
+  async saveLink(userId: string, slackModalData: SlackModalData): Promise<LinkEntity> {
     const sharingUser = await this.userRepository.findOneBy({
       slackUser: {
         id: userId,
@@ -257,16 +264,24 @@ export class SlackService {
       tagIds.map((tagId) => this.tagRepository.findOneBy({ id: tagId })),
     );
 
+    let title = null;
+    const data: ogs.ErrorResult | ogs.SuccessResult = await ogs({ url });
+    if (data.result.success) {
+      const ogTitle = data.result.ogTitle;
+      title = ogTitle.length > 50 ? ogTitle.substring(0, 50) : ogTitle;
+    }
+
     const linkEntity = this.linkRepository.create({
       url,
       content,
       sharingUser,
       sharedUsers,
       tags,
+      title,
     });
     const link = await this.linkRepository.save(linkEntity);
 
-    return link.id;
+    return link;
   }
 
   async postSlackMessage(
@@ -274,6 +289,7 @@ export class SlackService {
     userId: string,
     linkId: string,
     slackModalData: SlackModalData,
+    title?: string,
   ) {
     const { userOption, receiveUsers, tagMessage, content, url } = slackModalData;
 
@@ -310,6 +326,7 @@ export class SlackService {
       tagMessage,
       content,
       url,
+      title,
     );
 
     await this.slack.chat.postMessage({

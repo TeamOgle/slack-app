@@ -18,11 +18,11 @@ import { IsString } from 'class-validator';
 export class UserEntity extends CommonEntity {
   @IsString()
   @Column({ nullable: true })
-  slackUserId: string;
+  slackUserId?: string;
 
   @IsString()
   @Column({ nullable: true })
-  teamId: string;
+  teamId?: string;
 
   @ManyToOne(() => TeamEntity, (team: TeamEntity) => team.users)
   @JoinColumn([

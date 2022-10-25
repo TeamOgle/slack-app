@@ -214,6 +214,7 @@ export function slackModalMessage(
   tags: string,
   content: string,
   url: string,
+  title?: string,
 ) {
   const translator = short();
   const shortId = translator.fromUUID(linkId);
@@ -266,7 +267,7 @@ export function slackModalMessage(
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${content} \n\n*<${url}|👉 지금 보러가기>*`,
+            text: `${content} \n\n*<${url}|👉 ${title ?? '지금 보러가기'}>*`,
           },
         },
       ],
@@ -312,6 +313,7 @@ function slackLinkMessage(
   userMessage: string,
   content: string,
   url: string,
+  title?: string,
 ) {
   return [
     {
@@ -329,7 +331,7 @@ function slackLinkMessage(
         type: 'mrkdwn',
         text: `*${createdAt}에 ${userMessage}*\n${content}${
           content.length === 80 ? '...' : ''
-        }\n*<${url}|지금 보러가기>*\n\n`,
+        }\n*<${url}|${title ?? '지금 보러가기'}>*\n\n`,
       },
     },
     {

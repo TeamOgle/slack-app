@@ -38,11 +38,11 @@ export class SlackUserEntity {
 
   @IsString()
   @Column({ type: 'varchar', unique: false, nullable: true })
-  name: string;
+  name?: string;
 
   @IsString()
   @Column({ type: 'varchar', unique: false, nullable: true })
-  realName: string;
+  realName?: string;
 
   @ManyToOne(() => SlackTeamEntity, (slackTeam: SlackTeamEntity) => slackTeam.slackUsers)
   @JoinColumn([

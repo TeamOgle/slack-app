@@ -42,11 +42,11 @@ export class SlackTeamEntity {
 
   @IsString()
   @Column({ type: 'varchar', unique: true, nullable: true })
-  enterpriseId: string;
+  enterpriseId?: string;
 
   @IsString()
   @Column({ type: 'varchar', unique: false, nullable: true })
-  enterpriseName: string;
+  enterpriseName?: string;
 
   @OneToMany(() => SlackUserEntity, (slackUser: SlackUserEntity) => slackUser.slackTeam)
   slackUsers: SlackUserEntity[];

@@ -20,7 +20,7 @@ export class LinkEntity extends CommonEntity {
   @IsString()
   @MaxLength(50)
   @Column({ type: 'varchar', length: 50, unique: false, nullable: true })
-  title: string;
+  title?: string;
 
   @ManyToOne(() => UserEntity, (sharingUser: UserEntity) => sharingUser.sharingLinks)
   @JoinColumn([
