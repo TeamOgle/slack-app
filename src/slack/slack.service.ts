@@ -9,7 +9,7 @@ import {
   UserEntity,
   LinkEntity,
 } from 'src/database/entities';
-import type { BlockActionPayload, InteractionPayload } from './interfaces';
+import type { BlockActionPayload, InteractionPayload, SlackModalData } from './interfaces';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -25,6 +25,7 @@ import {
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 import { TagEntity } from '../database/entities/tags.entity';
 import { slackUpdatedModalView, USER_OPTION_ACTION_ID } from './utils/slack-view.util';
+import * as short from 'short-uuid';
 
 @Injectable()
 export class SlackService {
@@ -44,7 +45,6 @@ export class SlackService {
 
   constructor(
     @Inject(slackConfig.KEY) private config: ConfigType<typeof slackConfig>,
-    // @Inject() private slackViewService: SlackViewService,
     @InjectRepository(SlackTeamEntity) private slackTeamRepository: Repository<SlackTeamEntity>,
     @InjectRepository(SlackUserEntity) private slackUserRepository: Repository<SlackUserEntity>,
     @InjectRepository(TeamEntity) private teamRepository: Repository<TeamEntity>,
@@ -186,13 +186,50 @@ export class SlackService {
   }
 
   async sendLink(payload: InteractionPayload) {
-    const { receiveUsers, tagIds, url, content } = await this.postSlackMessage(payload);
+    const slackModalData = await this.getModalData(payload);
 
+    const linkId = await this.saveLink(payload.user.id, slackModalData);
+
+    await this.postSlackMessage(payload.team.id, payload.user.id, linkId, slackModalData);
+  }
+
+  async getModalData(payload: InteractionPayload): Promise<SlackModalData> {
+    const blocks = Object.values(payload.view.state.values);
+
+    const values = new Map();
+    for (let i = 0; i < blocks.length; i++) {
+      const [[key, value]] = Object.entries(blocks[i]);
+      values.set(key, value);
+    }
+
+    const userOption = values.get(USER_OPTION_ACTION_ID).selected_option.value;
+    let receiveUsers;
+    if (userOption === 'selected_users') {
+      receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
+    }
+    const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID];
+    const link = values.get(LINK_ACTION_ID).value;
+    const content = values.get(CONTENT_ACTION_ID).value;
+
+    return {
+      userOption,
+      receiveUsers,
+      tagIds: tags.map((tag) => tag.value),
+      url: link,
+      content,
+      tagMessage: tags.map((tag) => `#${tag.text.text}`).join(' '),
+    };
+  }
+
+  async saveLink(userId: string, slackModalData: SlackModalData): Promise<string> {
     const sharingUser = await this.userRepository.findOneBy({
       slackUser: {
-        id: payload.user.id,
+        id: userId,
       },
     });
+
+    const { receiveUsers, tagIds, url, content } = slackModalData;
+
     let sharedUsers;
     if (receiveUsers) {
       sharedUsers = await Promise.all(
@@ -228,33 +265,20 @@ export class SlackService {
       sharedUsers,
       tags,
     });
-    await this.linkRepository.save(linkEntity);
+    const link = await this.linkRepository.save(linkEntity);
+
+    return link.id;
   }
 
-  async postSlackMessage(payload: InteractionPayload) {
-    const slackTeam = await this.slackTeamRepository.findOneBy({ id: payload.team.id });
-    const blocks = Object.values(payload.view.state.values);
+  async postSlackMessage(
+    teamId: string,
+    userId: string,
+    linkId: string,
+    slackModalData: SlackModalData,
+  ) {
+    const { userOption, receiveUsers, tagMessage, content, url } = slackModalData;
 
-    const values = new Map();
-    for (let i = 0; i < blocks.length; i++) {
-      const [[key, value]] = Object.entries(blocks[i]);
-      values.set(key, value);
-    }
-
-    const { user } = payload;
-    const userOption = values.get(USER_OPTION_ACTION_ID).selected_option.value;
-    let receiveUsers;
-    if (userOption === 'selected_users') {
-      receiveUsers = values.get(USER_ACTION_ID)[USER_ACTION_ID];
-    }
-    const tags = values.get(TAG_ACTION_ID)[TAG_ACTION_ID];
-    const link = values.get(LINK_ACTION_ID).value;
-    const content = values.get(CONTENT_ACTION_ID).value;
-
-    const receiverMentions =
-      userOption === 'selected_all'
-        ? '<!here|here>'
-        : `${receiveUsers.map((user) => `<@${user}>`).join(' ')}님!`;
+    const slackTeam = await this.slackTeamRepository.findOneBy({ id: teamId });
 
     let conversations = await this.slack.conversations.list({
       token: slackTeam.accessToken,
@@ -275,12 +299,21 @@ export class SlackService {
       throw new BadRequestException('no channels');
     }
 
+    const translator = short();
+    const shortenId = translator.fromUUID(linkId);
+
+    const receiverMentions =
+      userOption === 'selected_all'
+        ? '<!here|here>'
+        : `${receiveUsers.map((user) => `<@${user}>`).join(' ')}님!`;
+
     const { messageBlocks, messageAttachments } = slackModalMessage(
+      shortenId,
       receiverMentions,
-      user.id,
-      tags.map((tag) => `#${tag.text.text}`).join(' '),
+      userId,
+      tagMessage,
       content,
-      link,
+      url,
     );
 
     await this.slack.chat.postMessage({
@@ -290,8 +323,6 @@ export class SlackService {
       blocks: messageBlocks,
       attachments: messageAttachments,
     });
-
-    return { receiveUsers, tagIds: tags.map((tag) => tag.value), url: link, content };
   }
 
   async getSharingLinks(slackUserId: string) {

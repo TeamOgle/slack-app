@@ -24,7 +24,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
       password: process.env.ZETTEL_DB_PASSWORD,
       database: process.env.ZETTEL_DB_NAME,
       entities: [`${__dirname}/database/entities/*.entity{.ts,.js}`],
-      synchronize: process.env.NODE_ENV === 'development',
+      synchronize: false,
       timezone: 'UTC',
       namingStrategy: new SnakeNamingStrategy(),
     }),

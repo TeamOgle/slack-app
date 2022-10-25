@@ -35,3 +35,12 @@ export interface BlockActionPayload {
   view: BlockActionView;
   actions: { selected_option: { value: string } }[];
 }
+
+export interface SlackModalData {
+  userOption: string;
+  receiveUsers: string[];
+  tagIds: string[];
+  url: string;
+  content: string;
+  tagMessage: string;
+}

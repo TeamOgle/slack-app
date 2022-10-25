@@ -207,13 +207,23 @@ export function slackUpdatedModalView(prevView: BlockActionView, isToAllUsers: b
 }
 
 export function slackModalMessage(
+  linkId: string,
   receiverMentions: string,
   userId: string,
   tags: string,
   content: string,
-  link: string,
+  url: string,
 ) {
   const messageBlocks: (Block | KnownBlock)[] = [
+    {
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `ID: *${linkId}*`,
+        },
+      ],
+    },
     {
       type: 'section',
       text: {
@@ -252,7 +262,7 @@ export function slackModalMessage(
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${content} \n\n*<${link}|👉 지금 보러가기>*`,
+            text: `${content} \n\n*<${url}|👉 지금 보러가기>*`,
           },
         },
       ],
