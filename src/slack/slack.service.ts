@@ -25,7 +25,6 @@ import {
 import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessResponse';
 import { TagEntity } from '../database/entities/tags.entity';
 import { slackUpdatedModalView, USER_OPTION_ACTION_ID } from './utils/slack-view.util';
-import * as short from 'short-uuid';
 
 @Injectable()
 export class SlackService {
@@ -299,16 +298,13 @@ export class SlackService {
       throw new BadRequestException('no channels');
     }
 
-    const translator = short();
-    const shortenId = translator.fromUUID(linkId);
-
     const receiverMentions =
       userOption === 'selected_all'
         ? '<!here|here>'
         : `${receiveUsers.map((user) => `<@${user}>`).join(' ')}님!`;
 
     const { messageBlocks, messageAttachments } = slackModalMessage(
-      shortenId,
+      linkId,
       receiverMentions,
       userId,
       tagMessage,
@@ -330,6 +326,7 @@ export class SlackService {
     const links = await this.linkRepository.find({
       relations: { sharedUsers: true },
       where: { sharingUser: { id: user.id } },
+      order: { createdAt: 'ASC' },
     });
     const userCount = await this.userRepository.count({
       relations: { team: true },
@@ -344,6 +341,7 @@ export class SlackService {
     const links = await this.linkRepository.find({
       relations: { sharingUser: true },
       where: { sharedUsers: { id: user.id } },
+      order: { createdAt: 'ASC' },
     });
 
     return slackSharedLinkMessage(links);
