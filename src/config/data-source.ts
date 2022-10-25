@@ -1,15 +1,11 @@
+import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
-import { DataSource, type DataSourceOptions } from 'typeorm';
+import { type DataSourceOptions } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
-dotenv.config({
-  path:
-    process.env.NODE_ENV === 'production'
-      ? 'src/config/env/.production.env'
-      : process.env.NODE_ENV === 'stage'
-      ? 'src/config/env/.stage.env'
-      : 'src/config/env/.development.env',
-});
+const env = process.env.NODE_ENV || 'development';
+const dotenv_path = `src/config/env/.${env}.env`;
+dotenv.config({ path: dotenv_path });
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'mysql',
