@@ -26,6 +26,7 @@ import type { Enterprise } from '@slack/web-api/dist/response/OauthV2AccessRespo
 import { TagEntity } from '../database/entities/tags.entity';
 import { slackUpdatedModalView, USER_OPTION_ACTION_ID } from './utils/slack-view.util';
 import * as ogs from 'open-graph-scraper';
+import type { SlackEventDto } from './dtos';
 
 @Injectable()
 export class SlackService {
@@ -362,5 +363,35 @@ export class SlackService {
     });
 
     return slackSharedLinkMessage(links);
+  }
+
+  async saveNewSlackUser(eventData: SlackEventDto) {
+    const user = eventData.event.user;
+    if (user.deleted || user.is_bot || !user.is_email_confirmed) {
+      return;
+    }
+
+    const slackTeam = await this.slackTeamRepository.findOneBy({ id: eventData.team_id });
+    const team = await this.teamRepository.findOneBy({ slackTeam: { id: slackTeam.id } });
+
+    const exSlackUser = this.slackUserRepository.findOneBy({ id: user.id });
+    if (exSlackUser) {
+      throw new BadRequestException('exist user');
+    }
+
+    const slackUserEntity = this.slackUserRepository.create({
+      id: user.id,
+      email: user.profile.email,
+      name: user.name,
+      realName: user.real_name,
+      slackTeam,
+    });
+    const slackUser = await this.slackUserRepository.save(slackUserEntity);
+
+    const userEntity = this.userRepository.create({
+      team,
+      slackUser,
+    });
+    await this.userRepository.save(userEntity);
   }
 }

@@ -11,7 +11,12 @@ import {
   Res,
 } from '@nestjs/common';
 import { SlackService } from './slack.service';
-import type { SlackShortCutDto, SlackEventDto, SlackCommandDto } from './dtos';
+import type {
+  SlackShortCutDto,
+  SlackEventDto,
+  SlackCommandDto,
+  SlackVerificationEventDto,
+} from './dtos';
 import type { ShortCutPayload, BlockActionPayload, InteractionPayload } from './interfaces';
 
 @Controller('slack')
@@ -45,9 +50,16 @@ export class SlackController {
 
   @HttpCode(HttpStatus.OK)
   @Post('action-point')
-  subscribeEvent(@Body() slackEventDto: SlackEventDto) {
-    console.log(slackEventDto);
-    return { challenge: slackEventDto.challenge };
+  subscribeEvent(@Body() slackEventDto: SlackVerificationEventDto | SlackEventDto) {
+    const isEvent = slackEventDto.type === 'event_callback';
+    if (isEvent) {
+      switch (slackEventDto.event.type) {
+        case 'team_join':
+          this.slackService.saveNewSlackUser(slackEventDto);
+          break;
+      }
+    }
+    return { challenge: isEvent ? slackEventDto.event.type : slackEventDto.challenge };
   }
 
   @HttpCode(HttpStatus.OK)
