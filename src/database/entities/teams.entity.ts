@@ -13,6 +13,6 @@ export class TeamEntity extends CommonEntity {
   @JoinColumn({ name: 'slack_team_id', referencedColumnName: 'id' })
   slackTeam: SlackTeamEntity;
 
-  @OneToMany(() => TagEntity, (tag: TagEntity) => tag.team)
+  @OneToMany(() => TagEntity, (tag: TagEntity) => tag.team, { cascade: true })
   tags: TagEntity[];
 }

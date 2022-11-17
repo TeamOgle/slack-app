@@ -266,7 +266,10 @@ export class SlackService {
     );
 
     let title = null;
-    const data: ogs.ErrorResult | ogs.SuccessResult = await ogs({ url });
+    const data: ogs.ErrorResult | ogs.SuccessResult = await ogs({
+      url,
+      onlyGetOpenGraphInfo: true,
+    });
     if (data.result.success) {
       const ogTitle = data.result.ogTitle;
       title = ogTitle.length > 50 ? ogTitle.substring(0, 50) : ogTitle;
