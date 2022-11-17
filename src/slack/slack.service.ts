@@ -266,14 +266,18 @@ export class SlackService {
     );
 
     let title = null;
-    const data: ogs.ErrorResult | ogs.SuccessResult = await ogs({
-      url,
-      onlyGetOpenGraphInfo: true,
-    });
-    if (data.result.success) {
-      const ogTitle = data.result.ogTitle;
-      title = ogTitle.length > 50 ? ogTitle.substring(0, 50) : ogTitle;
+    try {
+      const data: ogs.ErrorResult | ogs.SuccessResult = await ogs({
+        url,
+        onlyGetOpenGraphInfo: true,
+      });
+      if (data.result.success) {
+        const ogTitle = data.result.ogTitle;
+        title = ogTitle.length > 50 ? ogTitle.substring(0, 50) : ogTitle;
+      }
+    } catch (e) {
     }
+    
 
     const linkEntity = this.linkRepository.create({
       url,
