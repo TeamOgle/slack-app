@@ -275,9 +275,7 @@ export class SlackService {
         const ogTitle = data.result.ogTitle;
         title = ogTitle.length > 50 ? ogTitle.substring(0, 50) : ogTitle;
       }
-    } catch (e) {
-    }
-    
+    } catch (e) {}
 
     const linkEntity = this.linkRepository.create({
       url,
